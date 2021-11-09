@@ -45,9 +45,25 @@ BgWhite = "\x1b[47m"
 
 //TODO change how filename is detected, might not be last?
 
+/**
+UI Plans
++-------+
+| board |
+|       |
++-------+
+current stack, cull length, only show top 3 and bottom 3 (108, 113, 32, ... 105, 44, 100) adjustable later
+scrolling program output
+scrolling program output
+scrolling program output
+status line, 'Enter an integer', 'Enter a character'
+*/
+
+//#region constansts
 var BOARDHEIGHT = 25,
     BOARDWIDTH  = 80;
+//#endregion constants
 
+//#region interpreter init
 var divideByZeroThrows = true; //TODO flag to change the behavior of /0 based on spec.
 var x = 0,
     y = 0;
@@ -57,6 +73,7 @@ var stringMode = false;
 var board = process.argv[2]
 ? loadBoardFromFile(process.argv[2])
 : new Array(25).fill(new Array(80).fill(' '));
+//#endregion interpreter init
 
 function printBoard(){
     console.log(`\u2554${"\u2550".repeat(82)}\u2557`);
@@ -65,24 +82,8 @@ function printBoard(){
     console.log(`\u255A${"\u2550".repeat(82)}\u255d`);
 }
 
-//TODO test lines too long
-//TODO test too many lines
-function loadBoardFromFile(fileName){
-    var f = fs.readFileSync(fileName, "utf8");
-    var lines = f.split(/\r?\n/);
-    if(lines.length>25)
-        throw new Error(`Input too tall, max Befunge-93 line height:25. Lines:${lines.length}`);
-    var board = lines.map((l,i)=>{
-        if(l.length>80)
-            throw new Error(`Input line too long, max Befunge-93 line length:80. Line ${i+1}: ${l}`);
-        var l2 = l.padEnd(80,' ');
-        return [...l2];
-    });
-    while(board.length<25)
-        board.push(new Array(80).fill(' '));
-    return board;
-}
 
+//#region language functions
 var popStack = () => stack.pop() || 0;
 var pushInt = int => stack.push(int);
 var pushChar = char => stack.push(char.charCodeAt());
@@ -191,12 +192,29 @@ function userInt(){
 function userChar(){
     throw new Error(`Char input not implemented`)
 }
+//#endregion language functions
 
-printBoard();
+//#region processing functions
 
-while(1){
-    //execute the current location
-    //move in proper direction, wrap if needed
+//TODO test lines too long
+//TODO test too many lines
+function loadBoardFromFile(fileName){
+    var f = fs.readFileSync(fileName, "utf8");
+    var lines = f.split(/\r?\n/);
+    if(lines.length>25)
+        throw new Error(`Input too tall, max Befunge-93 line height:25. Lines:${lines.length}`);
+    var board = lines.map((l,i)=>{
+        if(l.length>80)
+            throw new Error(`Input line too long, max Befunge-93 line length:80. Line ${i+1}: ${l}`);
+        var l2 = l.padEnd(80,' ');
+        return [...l2];
+    });
+    while(board.length<25)
+        board.push(new Array(80).fill(' '));
+    return board;
+}
+
+function step(){
     var instruction = board[y][x];
 
     if(stringMode){
@@ -304,7 +322,13 @@ while(1){
     }
 
     if(direction == 'x')
-        break;
+        process.exit(); //Could disable interpreter interval as well if we want to do cleanup.
     else
         move();
 }
+
+//#endregion processing functions
+
+printBoard();
+var interpreter = setInterval(step, 1);
+

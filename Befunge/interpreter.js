@@ -1,5 +1,6 @@
 
 var fs = require('fs');
+const { StringDecoder } = require('string_decoder');
 
 //TODO change how filename is detected, might not be last?
 
@@ -13,8 +14,8 @@ var direction = 'r';
 var stack = [];
 var stringMode = false;
 var board = process.argv[2]
-    ? loadBoardFromFile(process.argv[2])
-    : new Array(25).fill(new Array(80).fill(' '));
+? loadBoardFromFile(process.argv[2])
+: new Array(25).fill(new Array(80).fill(' '));
 
 function printBoard(){
     console.log(`\u2554${"\u2550".repeat(82)}\u2557`);
@@ -42,7 +43,7 @@ function loadBoardFromFile(fileName){
 }
 
 var popStack = () => stack.pop() || 0;
-var pushInt = int => stack.push();
+var pushInt = int => stack.push(int);
 var pushChar = char => stack.push(char.charCodeAt());
 function add(){
     var a = popStack(), b = popStack();
@@ -64,7 +65,7 @@ function divide(){
 }
 function mod(){
     var a = popStack(), b = popStack();
-    pushInt(a % 2)
+    pushInt(b % a)
 }
 function not(){
     var e = popStack()

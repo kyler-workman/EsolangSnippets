@@ -67,7 +67,7 @@ status line, 'Enter an integer', 'Enter a character'
 var BOARDHEIGHT = 25;
 var BOARDWIDTH  = 80;
 var OUTPUTHEIGHT = 5;
-var INSTANT = true; //TODO turn this into a flag arg for instant or debug speeds with visual board
+var INSTANT = false; //TODO turn this into a flag arg for instant or debug speeds with visual board
 var POINTERCOLOR = FgBlack;
 var POINTERBG = BgYellow;
 var usr = process.stdin;
@@ -448,7 +448,7 @@ function writeToStatus(message){ //for ~ and & //TODO more uses?
         //redraw entire status line
         //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
         //accepted input would have to remember to clear whole status line
-        out.write(Clear + cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + message) //TODO some more consts for ui locations
+        out.write(cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + Erase + message) //TODO some more consts for ui locations
     }
 }
 function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)

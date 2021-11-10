@@ -1,5 +1,5 @@
 
-var fs = require('fs');
+var fs = require('fs')
 
 Reset = "\x1b[0m"
 Bright = "\x1b[1m"
@@ -26,6 +26,11 @@ BgBlue = "\x1b[44m"
 BgMagenta = "\x1b[45m"
 BgCyan = "\x1b[46m"
 BgWhite = "\x1b[47m"
+
+Erase = '\x1b[K'
+Clear = '\x1b[2J'
+Hidecursor = '\x1b[?25l'
+Showcursor = '\x1b[?25h'
 
 // Position the Cursor: \033[<L>;<C>H or \033[<L>;<C>f (puts the cursor at line L and column C)
 // Move the cursor up N lines: \033[<N>A
@@ -59,8 +64,16 @@ status line, 'Enter an integer', 'Enter a character'
 */
 
 //#region constansts
-var BOARDHEIGHT = 25,
-    BOARDWIDTH  = 80;
+var BOARDHEIGHT = 25;
+var BOARDWIDTH  = 80;
+var OUTPUTHEIGHT = 5;
+var INSTANT = true; //TODO turn this into a flag arg for instant or debug speeds with visual board
+var POINTERCOLOR = FgBlack;
+var POINTERBG = BgYellow;
+var usr = process.stdin;
+var out = process.stdout;
+// var spinner = '-\\|/';
+var spinner = ['>','=>','==>','===>','====>',' ===>','  ==>','   =>','    >','    -','    <','   <=','  <==',' <===','<====','<=== ','<== ','<= ','< ','-']
 //#endregion constants
 
 //#region interpreter init
@@ -73,6 +86,23 @@ var stringMode = false;
 var board = process.argv[2]
 ? loadBoardFromFile(process.argv[2])
 : new Array(25).fill(new Array(80).fill(' '));
+var spinnerState = -1;
+
+//get stream always, withut needing enter
+usr.setRawMode(true);
+//make node never quit, unless process.exit or an error happens
+usr.resume();
+//real stuff
+usr.setEncoding('utf8')
+
+usr.on('data', k =>{
+    if(k == '\u0003') //ctrl-c
+        process.exit();
+    //TODO check for if interpreter is waiting for user input, if it is then send the key to the waiter if it is not a control character
+    out.write(k);
+    // console.log(k.toString('utf8').charCodeAt());
+    // out.write(Buffer.from(k.toString('utf8').charCodeAt().toString()));
+});
 //#endregion interpreter init
 
 function printBoard(){
@@ -184,6 +214,7 @@ function put(){
     var y = popStack(),
         x = popStack(),
         e = popStack();
+        //TODO throw if OOB
     board[y][x] = String.fromCharCode(e);
 }
 function userInt(){
@@ -323,12 +354,71 @@ function step(){
 
     if(direction == 'x')
         process.exit(); //Could disable interpreter interval as well if we want to do cleanup.
-    else
+    else{
+        highlightNextCell();
         move();
+    }
 }
 
+function createStackString(){
+    if(stack.length<8){
+        return 'longstack'
+    }else{
+        return 'shortstack'
+    }
+}
 //#endregion processing functions
 
+//#region GUI methods
+cursorTo = (r,d) => `\x1b[${d};${r}H`
+function initDisplay(){
+    out.write(Clear + cursorTo(1,1) + '\u2554' + cursorTo(84,1) + '\u2557' + cursorTo(1,27) + '\u255A' + cursorTo(84,27) + '\u255D')
+    //        top left                   top right                   bottom left                 bottom right
+    out.write(cursorTo(2,1) + '\u2550'.repeat(82) + cursorTo(2,27) + '\u2550'.repeat(82)); //top and bottom
+    // for(var i = 2; i < 27; i++) out.write(cursorTo(1,i) + '\u2016' + cursorTo(84,i) + '\u2016'); //sides
+    for(i=0;i<25;i++){ //board content and sides
+        out.write(cursorTo(1,i+2) + `\u2016 ${board[i].join('')} \u2016`);
+    }
+    out.write(cursorTo(3,2) + POINTERBG + POINTERCOLOR + board[0][0] + Reset); //highlight initial pointer cell
+    writeToStack();
+    tickSpinner();
+}
+function writeToCell(char, x, y){ //for p
+    //TODO highlight cells that are put to, then unhighlight on next step
+}
+function highlightNextCell(){ //and unhighlight the previous
+
+}
+function writeToOutput(char){ //for , and .
+    //If char is 10, then shift [] to output array and pop  
+        //redraw entire output panel
+    //else append char to output[0]
+        //write char to appropriate location
+}
+function writeToStack(){//for pushInt and pushChar
+    out.write(cursorTo(1,28) + Erase + 'Stack: ' + createStackString())
+}
+function writeToStatus(message){ //for ~ and & //TODO more uses?
+    //redraw entire status line
+}
+function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
+    //redraw entire status line
+    spinnerState = (spinnerState+1) % spinner.length;
+    out.write(cursorTo(1, 29 + OUTPUTHEIGHT) + spinner[spinnerState] + cursorTo(85,27));
+    //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
+}
+//#endregion GUI methods
+
 printBoard();
-var interpreter = setInterval(step, 1);
+initDisplay();
+
+setInterval(tickSpinner, 100);
+// process.exit();
+// if(INSTANT){
+//     while(1){
+//         step();
+//     }
+// }else{
+//     var interpreter = setInterval(step, 1);
+// }
 

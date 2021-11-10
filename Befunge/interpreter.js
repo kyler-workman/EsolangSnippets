@@ -67,7 +67,7 @@ status line, 'Enter an integer', 'Enter a character'
 var BOARDHEIGHT = 25;
 var BOARDWIDTH  = 80;
 var OUTPUTHEIGHT = 5;
-var INSTANT = false; //TODO turn this into a flag arg for instant or debug speeds with visual board
+var INSTANT = true; //TODO turn this into a flag arg for instant or debug speeds with visual board
 var POINTERCOLOR = FgBlack;
 var POINTERBG = BgYellow;
 var usr = process.stdin;
@@ -200,7 +200,7 @@ function writeChar(){
     writeToOutput(String.fromCharCode(e));
 }
 function move(){ //bridge calls this
-    unhighlightCurrentCell();
+    if(!INSTANT) unhighlightCurrentCell();
     switch(direction){
         case 'u':
             y = (y + (BOARDHEIGHT - 1)) % BOARDHEIGHT;
@@ -215,7 +215,7 @@ function move(){ //bridge calls this
             x = (x + 1) % BOARDWIDTH
             break;
     }
-    highlightNextCell();
+    if(!INSTANT) highlightNextCell();
 }
 function get(){
     var y = popStack(),
@@ -444,17 +444,21 @@ function writeToStack(){//for pushInt and pushChar
     out.write(cursorTo(1,28) + Erase + 'Stack: ' + createStackString())
 }
 function writeToStatus(message){ //for ~ and & //TODO more uses?
-    //redraw entire status line
-    //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
-    //accepted input would have to remember to clear whole status line
-    out.write(cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + message) //TODO some more consts for ui locations
+    if(!INSTANT){
+        //redraw entire status line
+        //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
+        //accepted input would have to remember to clear whole status line
+        out.write(Clear + cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + message) //TODO some more consts for ui locations
+    }
 }
 function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
-    //redraw entire status line
-    spinnerState = (spinnerState+1) % spinner.length;
-    out.write(cursorTo(1, BOARDHEIGHT + OUTPUTHEIGHT + 4) + spinner[spinnerState]);
-    //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
-    if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
+    if(!INSTANT){
+        //redraw entire status line
+        spinnerState = (spinnerState+1) % spinner.length;
+        out.write(cursorTo(1, BOARDHEIGHT + OUTPUTHEIGHT + 4) + spinner[spinnerState]);
+        //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
+        if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
+    }
 }
 //#endregion GUI methods
 

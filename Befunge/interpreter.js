@@ -42,26 +42,7 @@ Showcursor = '\x1b[?25h'
 // Save cursor position: \033[s
 // Restore cursor position: \033[u
 
-
-// console.log(FgGreen,BgMagenta,'test')
-// console.log('test2')
-// console.log(Reset)
-// console.log('test3')
-
 //TODO change how filename is detected, might not be last?
-
-/**
-UI Plans
-+-------+
-| board |
-|       |
-+-------+
-current stack, cull length, only show top 3 and bottom 3 (108, 113, 32, ... 105, 44, 100) adjustable later
-scrolling program output
-scrolling program output
-scrolling program output
-status line, 'Enter an integer', 'Enter a character'
-*/
 
 //#region constansts
 var BOARDHEIGHT = 25;
@@ -80,7 +61,7 @@ var iFiguredOutHowToRemoveTheCursor = false;
 var useColorHighlightingAnyways = true;
 var useCursorPointer = !iFiguredOutHowToRemoveTheCursor && !useColorHighlightingAnyways;
 
-var cursorStorage = [6,34]; //(1,34) ?? //Also based on spinner length //todo remove magic numbers
+var cursorStorage = [6,34]; //(1,34) ?? //Also based on spinner length //TODO remove magic numbers
 //#endregion constants
 
 //#region interpreter init
@@ -113,18 +94,16 @@ usr.on('data', k =>{
 });
 //#endregion interpreter init
 
-// function printBoard(){
-//     console.log(`\u2554${"\u2550".repeat(82)}\u2557`);
-//     for(var row of board)
-//         console.log(`\u2016 ${row.join('')} \u2016`);
-//     console.log(`\u255A${"\u2550".repeat(82)}\u255d`);
-// }
-
-
 //#region language functions
 var popStack = () => stack.pop() || 0;
-var pushInt = int => stack.push(int);
-var pushChar = char => stack.push(char.charCodeAt());
+function pushInt(int){
+    stack.push(int);
+    writeToStack();
+}
+function pushChar(char){
+    stack.push(char.charCodeAt());
+    writeToStack();
+}
 function add(){
     var a = popStack(), b = popStack();
     pushInt(a + b);
@@ -170,11 +149,13 @@ function horizontalIf(){
     var e = popStack();
     if(e==0)right();
     else left();
+    writeToStack();
 }
 function verticalIf(){
     var e = popStack();
     if(e==0) down();
     else up();
+    writeToStack();
 }
 function toggleStringmode(){ stringMode =! stringMode }
 function duplicate(){
@@ -187,17 +168,20 @@ function swap(){
     pushInt(a);
     pushInt(b);
 }
-function discard(){ popStack(); }
+function discard(){
+    popStack();
+    writeToStack();
+}
 function writeInt(){
     var e = popStack()
     var int = e.toString();
     for(var c of int) writeToOutput(c);
-    // process.stdout.write(e.toString());
+    writeToStack();
 }
 function writeChar(){
     var e = popStack();
-    // process.stdout.write(String.fromCharCode(e));
     writeToOutput(String.fromCharCode(e));
+    writeToStack();
 }
 function move(){ //bridge calls this
     if(!INSTANT) unhighlightCurrentCell();
@@ -243,6 +227,7 @@ function userChar(){
 //TODO test lines too long
 //TODO test too many lines
 function loadBoardFromFile(fileName){
+    //TODO convert tabs to spaces when parsing tab == 4 spaces
     var f = fs.readFileSync(fileName, "utf8");
     var lines = f.split(/\r?\n/);
     if(lines.length>25)
@@ -376,10 +361,10 @@ function step(){
 }
 
 function createStackString(){
-    if(stack.length<8){
-        return 'longstack'
+    if(stack.length<16){
+        return [...stack].reverse().map(i=>i.toString().padStart(3,' ')).join('  ')
     }else{
-        return 'shortstack'
+        return `${stack.slice(-11).reverse().map(i=>i.toString().padStart(3,' ')).join('  ')}  ...  ${stack.slice(0,3).reverse().map(i=>i.toString().padStart(3,' ')).join('  ')}`
     }
 }
 //#endregion processing functions
@@ -465,25 +450,6 @@ function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
 if(INSTANT){
     while(1) step();
 }else{
-    // printBoard();
     initDisplay();
-    var interpreter = setInterval(step,50);
+    var interpreter = setInterval(step,100);
 }
-
-
-// setInterval(tickSpinner, 100);
-// setInterval(() => {
-//     writeToOutput(Math.floor(Math.random()*10).toString())
-// }, 50);
-// setInterval(() => {
-//     writeToOutput('\n');
-// }, 819);
-// process.exit();
-// if(INSTANT){
-//     while(1){
-//         step();
-//     }
-// }else{
-//     var interpreter = setInterval(step, 1);
-// }
-

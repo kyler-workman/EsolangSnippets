@@ -67,13 +67,20 @@ status line, 'Enter an integer', 'Enter a character'
 var BOARDHEIGHT = 25;
 var BOARDWIDTH  = 80;
 var OUTPUTHEIGHT = 5;
-var INSTANT = true; //TODO turn this into a flag arg for instant or debug speeds with visual board
+var INSTANT = false; //TODO turn this into a flag arg for instant or debug speeds with visual board
 var POINTERCOLOR = FgBlack;
 var POINTERBG = BgYellow;
 var usr = process.stdin;
 var out = process.stdout;
 // var spinner = '-\\|/';
-var spinner = ['>','=>','==>','===>','====>',' ===>','  ==>','   =>','    >','    -','    <','   <=','  <==',' <===','<====','<=== ','<== ','<= ','< ','-']
+var spinner = ['>    ','=>   ','==>  ','===> ','====>',' ===>','  ==>','   =>','    >','    -',
+               '    <','   <=','  <==',' <===','<====','<=== ','<==  ','<=   ','<    ','-    ']
+
+var iFiguredOutHowToRemoveTheCursor = false;
+var useColorHighlightingAnyways = true;
+var useCursorPointer = !iFiguredOutHowToRemoveTheCursor && !useColorHighlightingAnyways;
+
+var cursorStorage = [6,34]; //(1,34) ?? //Also based on spinner length //todo remove magic numbers
 //#endregion constants
 
 //#region interpreter init
@@ -100,18 +107,18 @@ usr.on('data', k =>{
     if(k == '\u0003') //ctrl-c
         process.exit();
     //TODO check for if interpreter is waiting for user input, if it is then send the key to the waiter if it is not a control character
-    out.write(k);
+    // out.write(k);
     // console.log(k.toString('utf8').charCodeAt());
     // out.write(Buffer.from(k.toString('utf8').charCodeAt().toString()));
 });
 //#endregion interpreter init
 
-function printBoard(){
-    console.log(`\u2554${"\u2550".repeat(82)}\u2557`);
-    for(var row of board)
-        console.log(`\u2016 ${row.join('')} \u2016`);
-    console.log(`\u255A${"\u2550".repeat(82)}\u255d`);
-}
+// function printBoard(){
+//     console.log(`\u2554${"\u2550".repeat(82)}\u2557`);
+//     for(var row of board)
+//         console.log(`\u2016 ${row.join('')} \u2016`);
+//     console.log(`\u255A${"\u2550".repeat(82)}\u255d`);
+// }
 
 
 //#region language functions
@@ -183,13 +190,17 @@ function swap(){
 function discard(){ popStack(); }
 function writeInt(){
     var e = popStack()
-    process.stdout.write(e.toString());
+    var int = e.toString();
+    for(var c of int) writeToOutput(c);
+    // process.stdout.write(e.toString());
 }
 function writeChar(){
     var e = popStack();
-    process.stdout.write(String.fromCharCode(e));
+    // process.stdout.write(String.fromCharCode(e));
+    writeToOutput(String.fromCharCode(e));
 }
 function move(){ //bridge calls this
+    unhighlightCurrentCell();
     switch(direction){
         case 'u':
             y = (y + (BOARDHEIGHT - 1)) % BOARDHEIGHT;
@@ -204,6 +215,7 @@ function move(){ //bridge calls this
             x = (x + 1) % BOARDWIDTH
             break;
     }
+    highlightNextCell();
 }
 function get(){
     var y = popStack(),
@@ -247,6 +259,7 @@ function loadBoardFromFile(fileName){
 }
 
 function step(){
+    tickSpinner();
     var instruction = board[y][x];
 
     if(stringMode){
@@ -353,10 +366,11 @@ function step(){
         }
     }
 
-    if(direction == 'x')
+    if(direction == 'x'){
+        writeToStatus('done');
         process.exit(); //Could disable interpreter interval as well if we want to do cleanup.
+    }
     else{
-        highlightNextCell();
         move();
     }
 }
@@ -369,9 +383,16 @@ function createStackString(){
     }
 }
 //#endregion processing functions
-
+// Move the cursor up N lines: \033[<N>A
+// Move the cursor down N lines: \033[<N>B
+// Move the cursor forward N columns: \033[<N>C
+// Move the cursor backward N columns: \033[<N>D
 //#region GUI methods
 cursorTo = (r,d) => `\x1b[${d};${r}H`
+cursorUp = (c) => `\x1b[${c}A`
+cursorDown = (c) => `\x1b[${c}B`
+cursorRight = (c) => `\x1b[${c}C`
+cursorLeft = (c) => `\x1b[${c}D`
 function initDisplay(){
     out.write(Clear + cursorTo(1,1) + '\u2554' + cursorTo(84,1) + '\u2557' + cursorTo(1,27) + '\u255A' + cursorTo(84,27) + '\u255D'); //TODO remove magic numbers
     //        top left                   top right                   bottom left                 bottom right
@@ -380,31 +401,43 @@ function initDisplay(){
     for(i=0;i<25;i++){ //board content and sides
         out.write(cursorTo(1,i+2) + `\u2016 ${board[i].join('')} \u2016`);
     }
-    out.write(cursorTo(3,2) + POINTERBG + POINTERCOLOR + board[0][0] + Reset); //highlight initial pointer cell
+    // out.write(cursorTo(3,2) + POINTERBG + POINTERCOLOR + board[0][0] + Reset); //highlight initial pointer cell
+    highlightNextCell();
     writeToStack();
     tickSpinner();
 }
 function writeToCell(char, x, y){ //for p
     //TODO highlight cells that are put to, then unhighlight on next step
 }
-function highlightNextCell(){ //and unhighlight the previous
-
+function unhighlightCurrentCell(){ //and unhighlight the previous
+    if(!useCursorPointer)
+        out.write(cursorTo(x+3,y+2) + Reset + board[y][x])
+}
+function highlightNextCell(){
+    if(useCursorPointer)
+        out.write(cursorTo(x+3,y+2))
+    else
+        out.write(cursorTo(x+3,y+2) + POINTERBG + POINTERCOLOR + board[y][x] + Reset + cursorTo(...cursorStorage))
 }
 function writeToOutput(char){ //for , and .
-    //If char is 10, then shift '' to output array and pop  
+    //If char is 10, then shift '' to output array and pop
         //redraw entire output panel
     //else append char to output[0]
         //write char to appropriate location
     //Hopefully \n == 10, else i will revisit this
-    if(char == '\n'){
-        output.unshift('')
-        output.pop();
-        for(var i = OUTPUTHEIGHT-1; i>=0; i--){
-            out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
-        }
+    if(INSTANT){
+        out.write(char);
     }else{
-        output[0]=output[0]+char;
-        out.write(cursorTo(output[0].length, BOARDHEIGHT + OUTPUTHEIGHT + 3) + output[0].at(-1));
+        if(char == '\n'){
+            output.unshift('')
+            output.pop();
+            for(var i = OUTPUTHEIGHT-1; i>=0; i--){
+                out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
+            }
+        }else{
+            output[0]=output[0]+char;
+            out.write(cursorTo(output[0].length, BOARDHEIGHT + OUTPUTHEIGHT + 3) + output[0].at(-1));
+        }
     }
 }
 function writeToStack(){//for pushInt and pushChar
@@ -414,25 +447,33 @@ function writeToStatus(message){ //for ~ and & //TODO more uses?
     //redraw entire status line
     //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
     //accepted input would have to remember to clear whole status line
+    out.write(cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + message) //TODO some more consts for ui locations
 }
 function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
     //redraw entire status line
     spinnerState = (spinnerState+1) % spinner.length;
-    out.write(cursorTo(1, BOARDHEIGHT + OUTPUTHEIGHT + 4) + spinner[spinnerState] + cursorTo(85,27)); //(1,34) ??
+    out.write(cursorTo(1, BOARDHEIGHT + OUTPUTHEIGHT + 4) + spinner[spinnerState]);
     //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
+    if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
 }
 //#endregion GUI methods
 
-printBoard();
-initDisplay();
+if(INSTANT){
+    while(1) step();
+}else{
+    // printBoard();
+    initDisplay();
+    var interpreter = setInterval(step,50);
+}
 
-setInterval(tickSpinner, 100);
-setInterval(() => {
-    writeToOutput(Math.floor(Math.random()*10).toString())
-}, 50);
-setInterval(() => {
-    writeToOutput('\n');
-}, 819);
+
+// setInterval(tickSpinner, 100);
+// setInterval(() => {
+//     writeToOutput(Math.floor(Math.random()*10).toString())
+// }, 50);
+// setInterval(() => {
+//     writeToOutput('\n');
+// }, 819);
 // process.exit();
 // if(INSTANT){
 //     while(1){

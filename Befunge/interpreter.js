@@ -87,6 +87,7 @@ var board = process.argv[2]
 ? loadBoardFromFile(process.argv[2])
 : new Array(25).fill(new Array(80).fill(' '));
 var spinnerState = -1;
+var output = new Array(OUTPUTHEIGHT).fill('');
 
 //get stream always, withut needing enter
 usr.setRawMode(true);
@@ -372,7 +373,7 @@ function createStackString(){
 //#region GUI methods
 cursorTo = (r,d) => `\x1b[${d};${r}H`
 function initDisplay(){
-    out.write(Clear + cursorTo(1,1) + '\u2554' + cursorTo(84,1) + '\u2557' + cursorTo(1,27) + '\u255A' + cursorTo(84,27) + '\u255D')
+    out.write(Clear + cursorTo(1,1) + '\u2554' + cursorTo(84,1) + '\u2557' + cursorTo(1,27) + '\u255A' + cursorTo(84,27) + '\u255D'); //TODO remove magic numbers
     //        top left                   top right                   bottom left                 bottom right
     out.write(cursorTo(2,1) + '\u2550'.repeat(82) + cursorTo(2,27) + '\u2550'.repeat(82)); //top and bottom
     // for(var i = 2; i < 27; i++) out.write(cursorTo(1,i) + '\u2016' + cursorTo(84,i) + '\u2016'); //sides
@@ -390,21 +391,34 @@ function highlightNextCell(){ //and unhighlight the previous
 
 }
 function writeToOutput(char){ //for , and .
-    //If char is 10, then shift [] to output array and pop  
+    //If char is 10, then shift '' to output array and pop  
         //redraw entire output panel
     //else append char to output[0]
         //write char to appropriate location
+    //Hopefully \n == 10, else i will revisit this
+    if(char == '\n'){
+        output.unshift('')
+        output.pop();
+        for(var i = OUTPUTHEIGHT-1; i>=0; i--){
+            out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
+        }
+    }else{
+        output[0]=output[0]+char;
+        out.write(cursorTo(output[0].length, BOARDHEIGHT + OUTPUTHEIGHT + 3) + output[0].at(-1));
+    }
 }
 function writeToStack(){//for pushInt and pushChar
     out.write(cursorTo(1,28) + Erase + 'Stack: ' + createStackString())
 }
 function writeToStatus(message){ //for ~ and & //TODO more uses?
     //redraw entire status line
+    //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
+    //accepted input would have to remember to clear whole status line
 }
 function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
     //redraw entire status line
     spinnerState = (spinnerState+1) % spinner.length;
-    out.write(cursorTo(1, 29 + OUTPUTHEIGHT) + spinner[spinnerState] + cursorTo(85,27));
+    out.write(cursorTo(1, BOARDHEIGHT + OUTPUTHEIGHT + 4) + spinner[spinnerState] + cursorTo(85,27)); //(1,34) ??
     //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
 }
 //#endregion GUI methods
@@ -413,6 +427,12 @@ printBoard();
 initDisplay();
 
 setInterval(tickSpinner, 100);
+setInterval(() => {
+    writeToOutput(Math.floor(Math.random()*10).toString())
+}, 50);
+setInterval(() => {
+    writeToOutput('\n');
+}, 819);
 // process.exit();
 // if(INSTANT){
 //     while(1){

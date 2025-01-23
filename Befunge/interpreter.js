@@ -1,5 +1,5 @@
 
-var fs = require('fs')
+const fs = require('fs');
 
 Reset = "\x1b[0m"
 Bright = "\x1b[1m"
@@ -215,7 +215,23 @@ function put(){
     board[y][x] = String.fromCharCode(e);
 }
 function userInt(){
-    throw new Error(`Int input not implemented`)
+    let prompt = "Input Integer: ";
+    writeToStatus(prompt);
+
+    //https://github.com/nodejs/node/issues/28243#issuecomment-502402453
+    let s = '', buf = Buffer.alloc(1);
+    while(buf[0] - 10 && buf[0] - 13){ //10 is LF, 13 is CR
+        fs.readSync(0, buf, 0, 1, 0);
+
+        if(buf[0] >= 48 && buf[0] <= 57) //Digits
+            s += buf;
+        else if(buf[0] == 8 || buf[0] == 127) //Backspace
+            s = s.slice(0, -1);
+
+        writeToStatus(prompt + s);
+    }
+
+    pushInt(parseInt(s));
 }
 function userChar(){
     throw new Error(`Char input not implemented`)

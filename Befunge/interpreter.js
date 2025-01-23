@@ -384,7 +384,7 @@ function initDisplay(){
     out.write(cursorTo(2,1) + '\u2550'.repeat(82) + cursorTo(2,27) + '\u2550'.repeat(82)); //top and bottom
     // for(var i = 2; i < 27; i++) out.write(cursorTo(1,i) + '\u2016' + cursorTo(84,i) + '\u2016'); //sides
     for(i=0;i<25;i++){ //board content and sides
-        out.write(cursorTo(1,i+2) + `\u2016 ${board[i].join('')} \u2016`);
+        out.write(cursorTo(1,i+2) + `\u2551 ${board[i].join('')} \u2551`);
     }
     // out.write(cursorTo(3,2) + POINTERBG + POINTERCOLOR + board[0][0] + Reset); //highlight initial pointer cell
     highlightNextCell();

@@ -213,6 +213,7 @@ function put(){
         e = popStack();
         //TODO throw if OOB
     board[y][x] = String.fromCharCode(e);
+    initDisplay(); //TODO instead of redrawing the whole board, just write the char that was "put"
 }
 function userInt(){
     let prompt = "Input Integer: ";

@@ -233,8 +233,23 @@ function userInt(){
 
     pushInt(parseInt(s));
 }
+
+/**
+ * Reads a printable character and pushes its ASCII value to the stack,
+ * CR/LF/RETURN are a separate case and will push 0.
+ */
 function userChar(){
-    throw new Error(`Char input not implemented`)
+    let prompt = "Input Character: ";
+    writeToStatus(prompt);
+
+    let buf = Buffer.alloc(1);
+    while(!(buf[0] >= 32 && buf[0] <= 126) && buf[0] - 10 && buf[0] - 13) //Printable ASCII
+        fs.readSync(0, buf, 0, 1, 0);
+
+    if(buf[0] == 10 || buf[0] == 13) //LF/CR
+        buf[0] = 0;
+
+    pushInt(buf[0]);
 }
 //#endregion language functions
 

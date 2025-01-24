@@ -1,0 +1,19 @@
+v
+0   >v
+>:~:|>\0p1+v
+|-\*@#*445:<
+@
+                    Line 2:
+0                   Init "x" value, used as x coordinate for "put" operation
+                    Line 3:
+>:                  Duplicate the stored "x"
+  ~:|               Get input, duplicate it, check if it is "RETURN"
+     >\0            Swap position of input and stored "x", push 0 (coordinate y)
+        p1+         Write input to (x, 0), increment stored "x"
+                    Line 4:
+          :         Duplicate stored "x"
+   *  *445          Push 80 to stack (4*4*5)
+    @#              If coming from RETURN check, exit. If coming from loop, skip
+ -\                 Subtract stored "x" from 80
+|                   If (80-x) was 0, exit to prevent writing OOB, otherwise loop
+12345678901234567890123456789012345678901234567890123456789012345678901234567890

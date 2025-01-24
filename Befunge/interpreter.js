@@ -227,6 +227,8 @@ function userInt(){
             s += buf;
         else if(buf[0] == 8 || buf[0] == 127) //Backspace
             s = s.slice(0, -1);
+        else if(buf[0] == 3) //Manually handle Ctrl-C
+            process.exit();
 
         writeToStatus(prompt + s);
     }
@@ -243,8 +245,11 @@ function userChar(){
     writeToStatus(prompt);
 
     let buf = Buffer.alloc(1);
-    while(!(buf[0] >= 32 && buf[0] <= 126) && buf[0] - 10 && buf[0] - 13) //Printable ASCII
+    while(!(buf[0] >= 32 && buf[0] <= 126) && buf[0] - 10 && buf[0] - 13){ //Printable ASCII
         fs.readSync(0, buf, 0, 1, 0);
+        if(buf[0] == 3) //Manually handle Ctrl-C
+            process.exit();
+    }
 
     if(buf[0] == 10 || buf[0] == 13) //LF/CR
         buf[0] = 0;

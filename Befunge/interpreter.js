@@ -427,9 +427,6 @@ function initDisplay(){
     writeToStack();
     tickSpinner();
 }
-function writeToCell(char, x, y){ //for p
-    //TODO highlight cells that are put to, then unhighlight on next step
-}
 function unhighlightCurrentCell(){ //and unhighlight the previous
     if(!useCursorPointer)
         out.write(cursorTo(x+3,y+2) + Reset + board[y][x])
@@ -460,7 +457,7 @@ function writeToOutput(char){ //for , and .
 function writeToStack(){//for pushInt and pushChar
     out.write(cursorTo(1,28) + Erase + 'Stack: ' + createStackString())
 }
-function writeToStatus(message){ //for ~ and & //TODO more uses?
+function writeToStatus(message){
     //redraw entire status line
     //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
     //accepted input would have to remember to clear whole status line

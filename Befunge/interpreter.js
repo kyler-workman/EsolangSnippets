@@ -49,7 +49,6 @@ var BOARDHEIGHT = 25;
 var BOARDWIDTH  = 80;
 var OUTPUTHEIGHT = 5;
 let STEPDELAYMS = 100;
-var INSTANT = false; //TODO turn this into a flag arg for instant or debug speeds with visual board
 var POINTERCOLOR = FgBlack;
 var POINTERBG = BgYellow;
 var usr = process.stdin;
@@ -185,7 +184,7 @@ function writeChar(){
     writeToStack();
 }
 function move(){ //bridge calls this
-    if(!INSTANT) unhighlightCurrentCell();
+    unhighlightCurrentCell();
     switch(direction){
         case 'u':
             y = (y + (BOARDHEIGHT - 1)) % BOARDHEIGHT;
@@ -200,7 +199,7 @@ function move(){ //bridge calls this
             x = (x + 1) % BOARDWIDTH
             break;
     }
-    if(!INSTANT) highlightNextCell();
+    highlightNextCell();
 }
 function get(){
     var y = popStack(),
@@ -427,46 +426,35 @@ function writeToOutput(char){ //for , and .
     //else append char to output[0]
         //write char to appropriate location
     //Hopefully \n == 10, else i will revisit this
-    if(INSTANT){
-        out.write(char);
-    }else{
-        if(char == '\n'){
-            output.unshift('')
-            output.pop();
-            for(var i = OUTPUTHEIGHT-1; i>=0; i--){
-                out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
-            }
-        }else{
-            output[0]=output[0]+char;
-            out.write(cursorTo(output[0].length, BOARDHEIGHT + OUTPUTHEIGHT + 3) + output[0].at(-1));
+    if(char == '\n'){
+        output.unshift('')
+        output.pop();
+        for(var i = OUTPUTHEIGHT-1; i>=0; i--){
+            out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
         }
+    }else{
+        output[0]=output[0]+char;
+        out.write(cursorTo(output[0].length, BOARDHEIGHT + OUTPUTHEIGHT + 3) + output[0].at(-1));
     }
 }
 function writeToStack(){//for pushInt and pushChar
     out.write(cursorTo(1,28) + Erase + 'Stack: ' + createStackString())
 }
 function writeToStatus(message){ //for ~ and & //TODO more uses?
-    if(!INSTANT){
-        //redraw entire status line
-        //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
-        //accepted input would have to remember to clear whole status line
-        out.write(cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + Erase + message) //TODO some more consts for ui locations
-    }
+    //redraw entire status line
+    //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
+    //accepted input would have to remember to clear whole status line
+    out.write(cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + Erase + message) //TODO some more consts for ui locations
 }
 function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
-    if(!INSTANT){
-        //redraw entire status line
-        spinnerState = (spinnerState+1) % spinner.length;
-        writeToStatus(spinner[spinnerState]);
-        //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
-        if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
-    }
+    //redraw entire status line
+    spinnerState = (spinnerState+1) % spinner.length;
+    writeToStatus(spinner[spinnerState]);
+    //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
+    if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
 }
 //#endregion GUI methods
 
-if(INSTANT){
-    while(1) step();
-}else{
-    initDisplay();
-    setInterval(step, STEPDELAYMS);
-}
+//PROGRAM START
+initDisplay();
+setInterval(step, STEPDELAYMS);

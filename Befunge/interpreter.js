@@ -48,6 +48,7 @@ Showcursor = '\x1b[?25h'
 var BOARDHEIGHT = 25;
 var BOARDWIDTH  = 80;
 var OUTPUTHEIGHT = 5;
+let STEPDELAYMS = 100;
 var INSTANT = false; //TODO turn this into a flag arg for instant or debug speeds with visual board
 var POINTERCOLOR = FgBlack;
 var POINTERBG = BgYellow;
@@ -72,8 +73,8 @@ var direction = 'r';
 var stack = [];
 var stringMode = false;
 var board = process.argv[2]
-? loadBoardFromFile(process.argv[2])
-: new Array(25).fill(new Array(80).fill(' '));
+    ? loadBoardFromFile(process.argv[2])
+    : new Array(25).fill(new Array(80).fill(' '));
 var spinnerState = -1;
 var output = new Array(OUTPUTHEIGHT).fill('');
 
@@ -456,7 +457,7 @@ function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
     if(!INSTANT){
         //redraw entire status line
         spinnerState = (spinnerState+1) % spinner.length;
-        out.write(cursorTo(1, BOARDHEIGHT + OUTPUTHEIGHT + 4) + spinner[spinnerState]);
+        writeToStatus(spinner[spinnerState]);
         //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
         if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
     }
@@ -467,5 +468,5 @@ if(INSTANT){
     while(1) step();
 }else{
     initDisplay();
-    var interpreter = setInterval(step,100);
+    setInterval(step, STEPDELAYMS);
 }

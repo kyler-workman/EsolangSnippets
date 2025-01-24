@@ -65,7 +65,6 @@ var cursorStorage = [6,34]; //(1,34) ?? //Also based on spinner length //TODO re
 //#endregion constants
 
 //#region interpreter init
-var divideByZeroThrows = true; //TODO flag to change the behavior of /0 based on spec.
 var x = 0,
     y = 0;
 var direction = 'r';
@@ -118,9 +117,11 @@ function multiply(){
 }
 function divide(){
     var a = popStack(), b = popStack();
-    if(a == 0 && (divideByZeroThrows || false)) //TODO implement
-        throw new Error(`Divide by zero attempt at (${x},${y}) 0/${b}`);
-    pushInt(Math.floor(a / b));
+    let result = a === 0
+        ? promptForInt(`Attempted to divide ${b} by 0, enter desired quotient`)
+        : Math.floor(b / a);
+
+    pushInt(result);
 }
 function mod(){
     var a = popStack(), b = popStack();
@@ -215,13 +216,13 @@ function put(){
     board[y][x] = String.fromCharCode(e);
     initDisplay(); //TODO instead of redrawing the whole board, just write the char that was "put"
 }
-function userInt(){
-    let prompt = "Input Integer: ";
-    writeToStatus(prompt);
+function promptForInt(prompt){
+    let fullPrompt = prompt || "Input Integer";
 
     //https://github.com/nodejs/node/issues/28243#issuecomment-502402453
     let s = '', buf = Buffer.alloc(1);
     while(buf[0] - 10 && buf[0] - 13){ //10 is LF, 13 is CR
+        writeToStatus(`${fullPrompt}: ${s}`);
         fs.readSync(0, buf, 0, 1, 0);
 
         if(buf[0] >= 48 && buf[0] <= 57) //Digits
@@ -230,11 +231,8 @@ function userInt(){
             s = s.slice(0, -1);
         else if(buf[0] == 3) //Manually handle Ctrl-C
             process.exit();
-
-        writeToStatus(prompt + s);
     }
-
-    pushInt(parseInt(s));
+    return parseInt(s);
 }
 
 /**
@@ -363,7 +361,8 @@ function step(){
                 put();
                 break;
             case '&':
-                userInt();
+                let int = promptForInt();
+                pushInt(int);
                 break;
             case '~':
                 userChar();

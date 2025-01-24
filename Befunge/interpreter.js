@@ -73,7 +73,7 @@ var stringMode = false;
 var board = process.argv[2]
     ? loadBoardFromFile(process.argv[2])
     : new Array(25).fill(new Array(80).fill(' '));
-var spinnerState = -1;
+var spinnerState = 0;
 var output = new Array(OUTPUTHEIGHT).fill('');
 
 //get stream always, withut needing enter
@@ -214,7 +214,7 @@ function put(){
         e = popStack();
         //TODO throw if OOB
     board[y][x] = String.fromCharCode(e);
-    initDisplay(); //TODO instead of redrawing the whole board, just write the char that was "put"
+    redrawDisplay(); //TODO instead of redrawing the whole board, just write the char that was "put"
 }
 function promptForInt(prompt){
     let fullPrompt = prompt || "Input Integer";
@@ -414,7 +414,7 @@ cursorUp = (c) => `\x1b[${c}A`
 cursorDown = (c) => `\x1b[${c}B`
 cursorRight = (c) => `\x1b[${c}C`
 cursorLeft = (c) => `\x1b[${c}D`
-function initDisplay(){
+function redrawDisplay(){
     out.write(Clear + cursorTo(1,1) + '\u2554' + cursorTo(84,1) + '\u2557' + cursorTo(1,27) + '\u255A' + cursorTo(84,27) + '\u255D'); //TODO remove magic numbers
     //        top left                   top right                   bottom left                 bottom right
     out.write(cursorTo(2,1) + '\u2550'.repeat(82) + cursorTo(2,27) + '\u2550'.repeat(82)); //top and bottom
@@ -425,7 +425,8 @@ function initDisplay(){
     // out.write(cursorTo(3,2) + POINTERBG + POINTERCOLOR + board[0][0] + Reset); //highlight initial pointer cell
     highlightNextCell();
     writeToStack();
-    tickSpinner();
+    redrawOutput();
+    redrawSpinner();
 }
 function unhighlightCurrentCell(){ //and unhighlight the previous
     if(!useCursorPointer)
@@ -446,14 +447,19 @@ function writeToOutput(char){ //for , and .
     if(char == '\n'){
         output.unshift('')
         output.pop();
-        for(var i = OUTPUTHEIGHT-1; i>=0; i--){
-            out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
-        }
+        redrawOutput();
     }else{
-        output[0]=output[0]+char;
+        output[0] += char;
         out.write(cursorTo(output[0].length, BOARDHEIGHT + OUTPUTHEIGHT + 3) + output[0].at(-1));
     }
 }
+
+function redrawOutput(){
+    for(var i = OUTPUTHEIGHT-1; i>=0; i--){
+        out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
+    }
+}
+
 function writeToStack(){//for pushInt and pushChar
     out.write(cursorTo(1,28) + Erase + 'Stack: ' + createStackString())
 }
@@ -466,6 +472,9 @@ function writeToStatus(message){
 function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
     //redraw entire status line
     spinnerState = (spinnerState+1) % spinner.length;
+    redrawSpinner();
+}
+function redrawSpinner(){
     writeToStatus(spinner[spinnerState]);
     //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
     if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
@@ -473,5 +482,5 @@ function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
 //#endregion GUI methods
 
 //PROGRAM START
-initDisplay();
+redrawDisplay();
 setInterval(step, STEPDELAYMS);

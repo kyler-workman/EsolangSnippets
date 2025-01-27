@@ -50,9 +50,9 @@ export const drawBoardChar = (x, y, char) => {
     out.write(esc_cursorTo(x + BorderSize + HorizontalMarginSize + 1, y + BorderSize + 1) + char + esc_cursorToStorage());
 }
 
-export function unhighlightCurrentCell(board, x, y){ //and unhighlight the previous
+export function unhighlightCurrentCell(board, x, y){
     out.write(esc_cursorTo(x + BorderSize + HorizontalMarginSize + 1, y + BorderSize + 1) + Reset + board[y][x])
 }
-export function highlightNextCell(board, x, y){
+export function highlightCurrentCell(board, x, y){
     out.write(esc_cursorTo(x + BorderSize + HorizontalMarginSize + 1, y + BorderSize + 1) + POINTERBG + POINTERCOLOR + board[y][x] + Reset + esc_cursorToStorage());
 }

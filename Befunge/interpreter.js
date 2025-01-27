@@ -1,5 +1,5 @@
 import { BOARDHEIGHT, BOARDWIDTH, STEPDELAYMS } from './src/constants.js';
-import { drawBoardChar, highlightNextCell, redrawDisplay, unhighlightCurrentCell } from './src/gui.js';
+import { drawBoardChar, highlightCurrentCell, redrawDisplay, unhighlightCurrentCell } from './src/gui.js';
 import { writeToOutput } from './src/outputUi.js';
 import { tickSpinner } from './src/spinner.js';
 import { popStack, pushChar, pushInt } from './src/stack.js';
@@ -129,7 +129,7 @@ function move(){ //bridge calls this
             x = (x + 1) % BOARDWIDTH
             break;
     }
-    highlightNextCell(board, x, y);
+    highlightCurrentCell(board, x, y);
 }
 function get(){
     var y = popStack(),
@@ -334,5 +334,5 @@ function step(){
 
 //PROGRAM START
 redrawDisplay(board);
-highlightNextCell(board, x, y);
+highlightCurrentCell(board, x, y);
 setInterval(step, STEPDELAYMS);

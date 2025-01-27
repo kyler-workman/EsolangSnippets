@@ -1,82 +1,25 @@
+import { BOARDHEIGHT, BOARDWIDTH, STEPDELAYMS } from './src/constants.js';
+import { highlightNextCell, redrawDisplay, unhighlightCurrentCell } from './src/gui.js';
+import { writeToOutput } from './src/outputUi.js';
+import { tickSpinner } from './src/spinner.js';
+import { writeToStack } from './src/stackUi.js';
+import { writeToStatus } from './src/status.js';
+import * as fs from 'fs';
 
-const fs = require('fs');
-
-Reset = "\x1b[0m"
-Bright = "\x1b[1m"
-Dim = "\x1b[2m"
-Underscore = "\x1b[4m"
-Blink = "\x1b[5m"
-Reverse = "\x1b[7m"
-Hidden = "\x1b[8m"
-
-FgBlack = "\x1b[30m"
-FgRed = "\x1b[31m"
-FgGreen = "\x1b[32m"
-FgYellow = "\x1b[33m"
-FgBlue = "\x1b[34m"
-FgMagenta = "\x1b[35m"
-FgCyan = "\x1b[36m"
-FgWhite = "\x1b[37m"
-
-BgBlack = "\x1b[40m"
-BgRed = "\x1b[41m"
-BgGreen = "\x1b[42m"
-BgYellow = "\x1b[43m"
-BgBlue = "\x1b[44m"
-BgMagenta = "\x1b[45m"
-BgCyan = "\x1b[46m"
-BgWhite = "\x1b[47m"
-
-Erase = '\x1b[K'
-Clear = '\x1b[2J'
-Hidecursor = '\x1b[?25l'
-Showcursor = '\x1b[?25h'
-
-// Position the Cursor: \033[<L>;<C>H or \033[<L>;<C>f (puts the cursor at line L and column C)
-// Move the cursor up N lines: \033[<N>A
-// Move the cursor down N lines: \033[<N>B
-// Move the cursor forward N columns: \033[<N>C
-// Move the cursor backward N columns: \033[<N>D
-// Clear the screen, move to (0,0): \033[2J
-// Erase to end of line: \033[K
-// Save cursor position: \033[s
-// Restore cursor position: \033[u
-
-//TODO change how filename is detected, might not be last?
-
-//#region constansts
-var BOARDHEIGHT = 25;
-var BOARDWIDTH  = 80;
-var OUTPUTHEIGHT = 5;
-let STEPDELAYMS = process.argv[3] || 100;
-var POINTERCOLOR = FgBlack;
-var POINTERBG = BgYellow;
-var usr = process.stdin;
-var out = process.stdout;
-// var spinner = '-\\|/';
-var spinner = ['>    ','=>   ','==>  ','===> ','====>',' ===>','  ==>','   =>','    >','    -',
-               '    <','   <=','  <==',' <===','<====','<=== ','<==  ','<=   ','<    ','-    ']
-
-var iFiguredOutHowToRemoveTheCursor = false;
-var useColorHighlightingAnyways = true;
-var useCursorPointer = !iFiguredOutHowToRemoveTheCursor && !useColorHighlightingAnyways;
-
-var cursorStorage = [6,34]; //(1,34) ?? //Also based on spinner length //TODO remove magic numbers
-//#endregion constants
+//TODO change how filename is detected, might not be 2?
 
 //#region interpreter init
 var x = 0,
-    y = 0;
+y = 0;
 var direction = 'r';
 var stack = [];
 var stringMode = false;
 var board = process.argv[2]
-    ? loadBoardFromFile(process.argv[2])
-    : new Array(25).fill(new Array(80).fill(' '));
-var spinnerState = 0;
-var output = new Array(OUTPUTHEIGHT).fill('');
+? loadBoardFromFile(process.argv[2])
+: new Array(25).fill(new Array(80).fill(' '));
 
-//get stream always, withut needing enter
+let usr = process.stdin;
+//get stream always, without needing enter
 usr.setRawMode(true);
 //make node never quit, unless process.exit or an error happens
 usr.resume();
@@ -97,11 +40,11 @@ usr.on('data', k =>{
 var popStack = () => stack.pop() || 0;
 function pushInt(int){
     stack.push(int);
-    writeToStack();
+    writeToStack(stack);
 }
 function pushChar(char){
     stack.push(char.charCodeAt());
-    writeToStack();
+    writeToStack(stack);
 }
 function add(){
     var a = popStack(), b = popStack();
@@ -150,13 +93,13 @@ function horizontalIf(){
     var e = popStack();
     if(e==0)right();
     else left();
-    writeToStack();
+    writeToStack(stack);
 }
 function verticalIf(){
     var e = popStack();
     if(e==0) down();
     else up();
-    writeToStack();
+    writeToStack(stack);
 }
 function toggleStringmode(){ stringMode =! stringMode }
 function duplicate(){
@@ -171,21 +114,21 @@ function swap(){
 }
 function discard(){
     popStack();
-    writeToStack();
+    writeToStack(stack);
 }
 function writeInt(){
     var e = popStack()
     var int = e.toString();
     for(var c of int) writeToOutput(c);
-    writeToStack();
+    writeToStack(stack);
 }
 function writeChar(){
     var e = popStack();
     writeToOutput(String.fromCharCode(e));
-    writeToStack();
+    writeToStack(stack);
 }
 function move(){ //bridge calls this
-    unhighlightCurrentCell();
+    unhighlightCurrentCell(board, x, y);
     switch(direction){
         case 'u':
             y = (y + (BOARDHEIGHT - 1)) % BOARDHEIGHT;
@@ -200,7 +143,7 @@ function move(){ //bridge calls this
             x = (x + 1) % BOARDWIDTH
             break;
     }
-    highlightNextCell();
+    highlightNextCell(board, x, y);
 }
 function get(){
     var y = popStack(),
@@ -214,7 +157,7 @@ function put(){
         e = popStack();
         //TODO throw if OOB
     board[y][x] = String.fromCharCode(e);
-    redrawDisplay(); //TODO instead of redrawing the whole board, just write the char that was "put"
+    redrawDisplay(board, stack); //TODO instead of redrawing the whole board, just write the char that was "put"
 }
 function promptForInt(prompt){
     let fullPrompt = prompt || "Input Integer";
@@ -396,91 +339,9 @@ function step(){
     }
 }
 
-function createStackString(){
-    if(stack.length<16){
-        return [...stack].reverse().map(i=>i.toString().padStart(3,' ')).join('  ')
-    }else{
-        return `${stack.slice(-11).reverse().map(i=>i.toString().padStart(3,' ')).join('  ')}  ...  ${stack.slice(0,3).reverse().map(i=>i.toString().padStart(3,' ')).join('  ')}`
-    }
-}
 //#endregion processing functions
-// Move the cursor up N lines: \033[<N>A
-// Move the cursor down N lines: \033[<N>B
-// Move the cursor forward N columns: \033[<N>C
-// Move the cursor backward N columns: \033[<N>D
-//#region GUI methods
-cursorTo = (r,d) => `\x1b[${d};${r}H`
-cursorUp = (c) => `\x1b[${c}A`
-cursorDown = (c) => `\x1b[${c}B`
-cursorRight = (c) => `\x1b[${c}C`
-cursorLeft = (c) => `\x1b[${c}D`
-function redrawDisplay(){
-    out.write(Clear + cursorTo(1,1) + '\u2554' + cursorTo(84,1) + '\u2557' + cursorTo(1,27) + '\u255A' + cursorTo(84,27) + '\u255D'); //TODO remove magic numbers
-    //        top left                   top right                   bottom left                 bottom right
-    out.write(cursorTo(2,1) + '\u2550'.repeat(82) + cursorTo(2,27) + '\u2550'.repeat(82)); //top and bottom
-    // for(var i = 2; i < 27; i++) out.write(cursorTo(1,i) + '\u2016' + cursorTo(84,i) + '\u2016'); //sides
-    for(i=0;i<25;i++){ //board content and sides
-        out.write(cursorTo(1,i+2) + `\u2551 ${board[i].join('')} \u2551`);
-    }
-    // out.write(cursorTo(3,2) + POINTERBG + POINTERCOLOR + board[0][0] + Reset); //highlight initial pointer cell
-    highlightNextCell();
-    writeToStack();
-    redrawOutput();
-    redrawSpinner();
-}
-function unhighlightCurrentCell(){ //and unhighlight the previous
-    if(!useCursorPointer)
-        out.write(cursorTo(x+3,y+2) + Reset + board[y][x])
-}
-function highlightNextCell(){
-    if(useCursorPointer)
-        out.write(cursorTo(x+3,y+2))
-    else
-        out.write(cursorTo(x+3,y+2) + POINTERBG + POINTERCOLOR + board[y][x] + Reset + cursorTo(...cursorStorage))
-}
-function writeToOutput(char){ //for , and .
-    //If char is 10, then shift '' to output array and pop
-        //redraw entire output panel
-    //else append char to output[0]
-        //write char to appropriate location
-    //Hopefully \n == 10, else i will revisit this
-    if(char == '\n'){
-        output.unshift('')
-        output.pop();
-        redrawOutput();
-    }else{
-        output[0] += char;
-        out.write(cursorTo(output[0].length, BOARDHEIGHT + OUTPUTHEIGHT + 3) + output[0].at(-1));
-    }
-}
-
-function redrawOutput(){
-    for(var i = OUTPUTHEIGHT-1; i>=0; i--){
-        out.write(cursorTo(1,BOARDHEIGHT + (OUTPUTHEIGHT-i) + 3) + Erase + output[i]);
-    }
-}
-
-function writeToStack(){//for pushInt and pushChar
-    out.write(cursorTo(1,28) + Erase + 'Stack: ' + createStackString())
-}
-function writeToStatus(message){
-    //redraw entire status line
-    //alternatively, print the status left aligned to the right edge of the board, it can coexist with the spinner?
-    //accepted input would have to remember to clear whole status line
-    out.write(cursorTo(1, BOARDHEIGHT+OUTPUTHEIGHT+4) + Erase + message) //TODO some more consts for ui locations
-}
-function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
-    //redraw entire status line
-    spinnerState = (spinnerState+1) % spinner.length;
-    redrawSpinner();
-}
-function redrawSpinner(){
-    writeToStatus(spinner[spinnerState]);
-    //TODO find a good place to store the cursor, or a way to hide it. 'Hidden does nothing'
-    if(!useCursorPointer) out.write(cursorTo(...cursorStorage))
-}
-//#endregion GUI methods
 
 //PROGRAM START
-redrawDisplay();
+redrawDisplay(board, stack);
+highlightNextCell(board, x, y);
 setInterval(step, STEPDELAYMS);

@@ -1,0 +1,12 @@
+{
+  "name": "befunge",
+  "version": "1.0.0",
+  "main": "interpreter.js",
+  "scripts": {
+    "start": "cls && node interpreter.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module"
+}

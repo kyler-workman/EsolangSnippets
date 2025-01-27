@@ -2,7 +2,7 @@ import { BOARDHEIGHT, BOARDWIDTH, STEPDELAYMS } from './src/constants.js';
 import { highlightNextCell, redrawDisplay, unhighlightCurrentCell } from './src/gui.js';
 import { writeToOutput } from './src/outputUi.js';
 import { tickSpinner } from './src/spinner.js';
-import { writeToStack } from './src/stackUi.js';
+import { popStack, pushChar, pushInt } from './src/stack.js';
 import { writeToStatus } from './src/status.js';
 import * as fs from 'fs';
 
@@ -12,7 +12,6 @@ import * as fs from 'fs';
 var x = 0,
 y = 0;
 var direction = 'r';
-var stack = [];
 var stringMode = false;
 var board = process.argv[2]
 ? loadBoardFromFile(process.argv[2])
@@ -37,15 +36,6 @@ usr.on('data', k =>{
 //#endregion interpreter init
 
 //#region language functions
-var popStack = () => stack.pop() || 0;
-function pushInt(int){
-    stack.push(int);
-    writeToStack(stack);
-}
-function pushChar(char){
-    stack.push(char.charCodeAt());
-    writeToStack(stack);
-}
 function add(){
     var a = popStack(), b = popStack();
     pushInt(a + b);
@@ -93,13 +83,11 @@ function horizontalIf(){
     var e = popStack();
     if(e==0)right();
     else left();
-    writeToStack(stack);
 }
 function verticalIf(){
     var e = popStack();
     if(e==0) down();
     else up();
-    writeToStack(stack);
 }
 function toggleStringmode(){ stringMode =! stringMode }
 function duplicate(){
@@ -114,18 +102,15 @@ function swap(){
 }
 function discard(){
     popStack();
-    writeToStack(stack);
 }
 function writeInt(){
     var e = popStack()
     var int = e.toString();
     for(var c of int) writeToOutput(c);
-    writeToStack(stack);
 }
 function writeChar(){
     var e = popStack();
     writeToOutput(String.fromCharCode(e));
-    writeToStack(stack);
 }
 function move(){ //bridge calls this
     unhighlightCurrentCell(board, x, y);
@@ -157,7 +142,7 @@ function put(){
         e = popStack();
         //TODO throw if OOB
     board[y][x] = String.fromCharCode(e);
-    redrawDisplay(board, stack); //TODO instead of redrawing the whole board, just write the char that was "put"
+    redrawDisplay(board); //TODO instead of redrawing the whole board, just write the char that was "put"
 }
 function promptForInt(prompt){
     let fullPrompt = prompt || "Input Integer";
@@ -342,6 +327,6 @@ function step(){
 //#endregion processing functions
 
 //PROGRAM START
-redrawDisplay(board, stack);
+redrawDisplay(board);
 highlightNextCell(board, x, y);
 setInterval(step, STEPDELAYMS);

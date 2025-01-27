@@ -1,7 +1,7 @@
 import { Clear, Reset } from './controlCodes.js';
 import { POINTERBG, POINTERCOLOR } from './constants.js';
 import { redrawSpinner } from './spinner.js';
-import { writeToStack } from './stackUi.js';
+import { redrawStack } from './stack.js';
 import { redrawOutput } from './outputUi.js';
 
 const out = process.stdout;
@@ -19,7 +19,7 @@ export const esc_cursorUp = (c) => `\x1b[${c}A`
 export const esc_cursorDown = (c) => `\x1b[${c}B`
 export const esc_cursorRight = (c) => `\x1b[${c}C`
 export const esc_cursorLeft = (c) => `\x1b[${c}D`
-export function redrawDisplay(board, stack){
+export function redrawDisplay(board){
     out.write(Clear + esc_cursorTo(1,1) + '\u2554' + esc_cursorTo(84,1) + '\u2557' + esc_cursorTo(1,27) + '\u255A' + esc_cursorTo(84,27) + '\u255D'); //TODO remove magic numbers
     //        top left                   top right                   bottom left                 bottom right
     out.write(esc_cursorTo(2,1) + '\u2550'.repeat(82) + esc_cursorTo(2,27) + '\u2550'.repeat(82)); //top and bottom
@@ -28,7 +28,7 @@ export function redrawDisplay(board, stack){
         out.write(esc_cursorTo(1,i+2) + `\u2551 ${board[i].join('')} \u2551`);
     }
     // out.write(cursorTo(3,2) + POINTERBG + POINTERCOLOR + board[0][0] + Reset); //highlight initial pointer cell
-    writeToStack(stack);
+    redrawStack();
     redrawOutput();
     redrawSpinner();
 }

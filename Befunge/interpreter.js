@@ -4,6 +4,7 @@ import { writeToOutput } from './src/outputUi.js';
 import { tickSpinner } from './src/spinner.js';
 import { popStack, pushChar, pushInt } from './src/stack.js';
 import { writeToStatus } from './src/status.js';
+import { Direction } from './src/enums.js';
 import * as fs from 'fs';
 
 //TODO change how filename is detected, might not be 2?
@@ -11,7 +12,8 @@ import * as fs from 'fs';
 //#region interpreter init
 var x = 0,
     y = 0;
-var direction = 'r';
+var ipDirection = Direction.Right;
+let terminateInterpreter = false;
 var stringMode = false;
 var board = process.argv[2]
     ? loadBoardFromFile(process.argv[2])
@@ -68,11 +70,11 @@ function greaterThan(){
     var a = popStack(), b = popStack();
     pushInt(b > a ? 1 : 0);
 }
-function up(){ direction = 'u' }
-function down(){ direction = 'd' }
-function left(){ direction = 'l' }
-function right(){ direction = 'r' }
-const goRandom = () => [up, down, left, right][Math.floor(Math.random()*4)]();
+const goUp = () => ipDirection = Direction.Up;
+const goDown = () => ipDirection = Direction.Down;
+const goLeft = () => ipDirection = Direction.Left;
+const goRight = () => ipDirection = Direction.Right;
+const goRandom = () => [goUp, goDown, goLeft, goRight][Math.floor(Math.random()*4)]();
 // function goRandom(){
 //     var r = Math.random();
 //     if      (r < .25) up();
@@ -82,13 +84,13 @@ const goRandom = () => [up, down, left, right][Math.floor(Math.random()*4)]();
 // }
 function horizontalIf(){
     var e = popStack();
-    if(e==0)right();
-    else left();
+    if(e==0) goRight();
+    else goLeft();
 }
 function verticalIf(){
     var e = popStack();
-    if(e==0) down();
-    else up();
+    if(e==0) goDown();
+    else goUp();
 }
 function toggleStringmode(){ stringMode =! stringMode }
 function duplicate(){
@@ -115,17 +117,17 @@ function writeChar(){
 }
 function move(){ //bridge calls this
     unhighlightCurrentCell(board, x, y);
-    switch(direction){
-        case 'u':
+    switch(ipDirection){
+        case Direction.Up:
             y = (y + (BOARDHEIGHT - 1)) % BOARDHEIGHT;
             break;
-        case 'd':
+        case Direction.Down:
             y = (y + 1) % BOARDHEIGHT
             break;
-        case 'l':
+        case Direction.Left:
             x = (x + (BOARDWIDTH - 1)) % BOARDWIDTH
             break;
-        case 'r':
+        case Direction.Right:
             x = (x + 1) % BOARDWIDTH
             break;
     }
@@ -247,16 +249,16 @@ function step(){
                 greaterThan();
                 break;
             case '>':
-                right();
+                goRight();
                 break;
             case '<':
-                left();
+                goLeft();
                 break;
             case '^':
-                up();
+                goUp();
                 break;
             case 'v':
-                down();
+                goDown();
                 break;
             case '?':
                 goRandom();
@@ -302,7 +304,7 @@ function step(){
                 userChar();
                 break;
             case '@':
-                direction = 'x'
+                terminateInterpreter = true;
                 break;
             case '0':
             case '1':
@@ -321,7 +323,7 @@ function step(){
         }
     }
 
-    if(direction == 'x'){
+    if(terminateInterpreter){
         writeToStatus('done'); //TODO not working anymore for some reason
         process.exit(); //Could disable interpreter interval as well if we want to do cleanup.
     }

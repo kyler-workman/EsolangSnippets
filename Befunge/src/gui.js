@@ -5,7 +5,7 @@ import { redrawStack } from './stack.js';
 import { redrawOutput } from './outputUi.js';
 
 export const BorderSize = 1; //Does not currently support any value other than 1
-const SideGapSize = 1;
+const HorizontalMarginSize = 1;
 export const gui_StackRow = (BorderSize * 2) + BOARDHEIGHT + 1;
 export const gui_StatusRow = gui_StackRow + OUTPUTHEIGHT + 1;
 
@@ -25,7 +25,7 @@ export const esc_cursorRight = (c) => `\x1b[${c}C`
 export const esc_cursorLeft = (c) => `\x1b[${c}D`
 
 export function redrawDisplay(board){
-    let rightmax = BOARDWIDTH + (BorderSize * 2) + (SideGapSize * 2);
+    let rightmax = BOARDWIDTH + (BorderSize * 2) + (HorizontalMarginSize * 2);
     let bottommax = BOARDHEIGHT + (BorderSize * 2);
     out.write(Clear + esc_cursorTo(1, 1) + '\u2554'); //top left
     out.write(esc_cursorTo(rightmax, 1) + '\u2557'); //top right
@@ -36,9 +36,9 @@ export function redrawDisplay(board){
     out.write(esc_cursorTo(BorderSize + 1, bottommax) + '\u2550'.repeat(rightmax - (BorderSize * 2))); //bottom row
 
     for(let i = 0; i < BOARDHEIGHT; i++){
-        out.write(esc_cursorTo(1, i + BorderSize + 1) + `\u2551${' '.repeat(SideGapSize)}`); //left border
+        out.write(esc_cursorTo(1, i + BorderSize + 1) + `\u2551${' '.repeat(HorizontalMarginSize)}`); //left border
         out.write(board[i].join('')); //content //TODO find a way to render unprintable/control characters (see samples\dna)
-        out.write(`${' '.repeat(SideGapSize)}\u2551`); //right border
+        out.write(`${' '.repeat(HorizontalMarginSize)}\u2551`); //right border
     }
 
     redrawStack();
@@ -46,8 +46,8 @@ export function redrawDisplay(board){
     redrawSpinner();
 }
 export function unhighlightCurrentCell(board, x, y){ //and unhighlight the previous
-    out.write(esc_cursorTo(x + BorderSize + SideGapSize + 1, y + BorderSize + SideGapSize) + Reset + board[y][x])
+    out.write(esc_cursorTo(x + BorderSize + HorizontalMarginSize + 1, y + BorderSize + 1) + Reset + board[y][x])
 }
 export function highlightNextCell(board, x, y){
-    out.write(esc_cursorTo(x + BorderSize + SideGapSize + 1, y + BorderSize + SideGapSize) + POINTERBG + POINTERCOLOR + board[y][x] + Reset + esc_cursorToStorage());
+    out.write(esc_cursorTo(x + BorderSize + HorizontalMarginSize + 1, y + BorderSize + 1) + POINTERBG + POINTERCOLOR + board[y][x] + Reset + esc_cursorToStorage());
 }

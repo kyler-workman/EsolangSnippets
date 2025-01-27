@@ -45,6 +45,11 @@ export function redrawDisplay(board){
     redrawOutput();
     redrawSpinner();
 }
+
+export const drawBoardChar = (x, y, char) => {
+    out.write(esc_cursorTo(x + BorderSize + HorizontalMarginSize + 1, y + BorderSize + 1) + char + esc_cursorToStorage());
+}
+
 export function unhighlightCurrentCell(board, x, y){ //and unhighlight the previous
     out.write(esc_cursorTo(x + BorderSize + HorizontalMarginSize + 1, y + BorderSize + 1) + Reset + board[y][x])
 }

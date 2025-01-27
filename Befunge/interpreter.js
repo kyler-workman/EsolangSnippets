@@ -1,5 +1,5 @@
 import { BOARDHEIGHT, BOARDWIDTH, STEPDELAYMS } from './src/constants.js';
-import { highlightNextCell, redrawDisplay, unhighlightCurrentCell } from './src/gui.js';
+import { drawBoardChar, highlightNextCell, redrawDisplay, unhighlightCurrentCell } from './src/gui.js';
 import { writeToOutput } from './src/outputUi.js';
 import { tickSpinner } from './src/spinner.js';
 import { popStack, pushChar, pushInt } from './src/stack.js';
@@ -143,7 +143,12 @@ function put(){
         e = popStack();
         //TODO throw if OOB
     board[y][x] = String.fromCharCode(e);
-    redrawDisplay(board); //TODO instead of redrawing the whole board, just write the char that was "put"
+
+    //This method does not need to redraw the entire board,
+    //but I'm sure it breaks some kind of rule by exposing a way to circumvent normal redrawing via the gui module.
+    //I dont like the UI flashing though, so it's staying like this.
+    drawBoardChar(x, y, board[y][x]);
+    //redrawDisplay(board);
 }
 function promptForInt(prompt){
     let fullPrompt = prompt || "Input Integer";

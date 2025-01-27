@@ -72,13 +72,14 @@ function up(){ direction = 'u' }
 function down(){ direction = 'd' }
 function left(){ direction = 'l' }
 function right(){ direction = 'r' }
-function goRandom(){
-    var r = Math.random();
-    if      (r < .25) up();
-    else if (r < .5) down();
-    else if (r < .75) left();
-    else right();
-}
+const goRandom = () => [up, down, left, right][Math.floor(Math.random()*4)]();
+// function goRandom(){
+//     var r = Math.random();
+//     if      (r < .25) up();
+//     else if (r < .5) down();
+//     else if (r < .75) left();
+//     else right();
+// }
 function horizontalIf(){
     var e = popStack();
     if(e==0)right();

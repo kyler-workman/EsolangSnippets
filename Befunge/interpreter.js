@@ -13,7 +13,7 @@ import * as fs from 'fs';
 var x = 0,
     y = 0;
 var instructionPointerDirection = Direction.Right;
-let terminateInterpreter = false;
+let stepInterval;
 var stringMode = false;
 var board = process.argv[2]
     ? loadBoardFromFile(process.argv[2])
@@ -297,7 +297,7 @@ function step(){
                 userChar();
                 break;
             case '@':
-                terminateInterpreter = true;
+                stopInterpreter();
                 break;
             case '0':
             case '1':
@@ -316,18 +316,23 @@ function step(){
         }
     }
 
-    if(terminateInterpreter){
-        writeToStatus('done'); //TODO not working anymore for some reason
-        process.exit(); //Could disable interpreter interval as well if we want to do cleanup.
-    }
-    else{
-        move();
-    }
+    move();
+}
+
+const stopInterpreter = () => {
+    clearInterval(stepInterval);
+    writeToStatus(`done\n`); //works, but
+    // For some reason, without \n the status line is immediately overwritten by the terminal prompt after exit.
+    // If \n is added, then the prompt appears too low
+    process.exit();
+}
+
+const startInterpreter = () => {
+    redrawDisplay(board);
+    highlightCurrentCell(board, x, y);
+    stepInterval = setInterval(step, STEPDELAYMS);
 }
 
 //#endregion processing functions
 
-//PROGRAM START
-redrawDisplay(board);
-highlightCurrentCell(board, x, y);
-setInterval(step, STEPDELAYMS);
+startInterpreter();

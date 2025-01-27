@@ -1,5 +1,5 @@
 import { Erase } from "./controlCodes.js";
-import { esc_cursorTo } from "./gui.js";
+import { esc_cursorTo, gui_StackRow } from "./gui.js";
 
 const out = process.stdout;
 let stack = [];
@@ -14,6 +14,8 @@ export function pushChar(char){
     redrawStack(stack);
 }
 
+//"pop, pop, push" operations now redraw the stack 3 times. Instead of allowing the caller to redraw at the end, now that redrawStack is no longer called in interpreter.js
+//TODO optimize
 export const popStack = () => {
     let val = stack.pop() || 0;
     redrawStack();
@@ -29,5 +31,5 @@ function createStackString(){
 }
 
 export function redrawStack(){//for pushInt and pushChar
-    out.write(esc_cursorTo(1, 28) + Erase + 'Stack: ' + createStackString())
+    out.write(esc_cursorTo(1, gui_StackRow) + Erase + 'Stack: ' + createStackString())
 }

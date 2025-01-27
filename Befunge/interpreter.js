@@ -10,12 +10,12 @@ import * as fs from 'fs';
 
 //#region interpreter init
 var x = 0,
-y = 0;
+    y = 0;
 var direction = 'r';
 var stringMode = false;
 var board = process.argv[2]
-? loadBoardFromFile(process.argv[2])
-: new Array(25).fill(new Array(80).fill(' '));
+    ? loadBoardFromFile(process.argv[2])
+    : new Array(BOARDHEIGHT).fill(new Array(BOARDWIDTH).fill(' '));
 
 let usr = process.stdin;
 //get stream always, without needing enter
@@ -194,16 +194,16 @@ function loadBoardFromFile(fileName){
     //TODO convert tabs to spaces when parsing tab == 4 spaces
     var f = fs.readFileSync(fileName, "utf8");
     var lines = f.split(/\r?\n/);
-    if(lines.length>25)
-        throw new Error(`Input too tall, max Befunge-93 line height:25. Lines:${lines.length}`);
-    var board = lines.map((l,i)=>{
-        if(l.length>80)
-            throw new Error(`Input line too long, max Befunge-93 line length:80. Line ${i+1}: ${l}`);
-        var l2 = l.padEnd(80,' ');
+    if(lines.length > BOARDHEIGHT)
+        throw new Error(`Input too tall, max line height:${BOARDHEIGHT}. Lines:${lines.length}`);
+    var board = lines.map((l, i)=>{
+        if(l.length > BOARDWIDTH)
+            throw new Error(`Input line too long, max line length:${BOARDWIDTH}. Line ${i+1}: ${l}`);
+        var l2 = l.padEnd(BOARDWIDTH, ' ');
         return [...l2];
     });
-    while(board.length<25)
-        board.push(new Array(80).fill(' '));
+    while(board.length<BOARDHEIGHT)
+        board.push(new Array(BOARDWIDTH).fill(' '));
     return board;
 }
 

@@ -1,5 +1,5 @@
 import { Clear, Reset } from './controlCodes.js';
-import { POINTERBG, POINTERCOLOR } from './constants.js';
+import { BOARDHEIGHT, POINTERBG, POINTERCOLOR } from './constants.js';
 import { redrawSpinner } from './spinner.js';
 import { redrawStack } from './stack.js';
 import { redrawOutput } from './outputUi.js';
@@ -8,6 +8,11 @@ const out = process.stdout;
 const cursorStorage = [6, 34]; //(1, 34) ?? //Also based on spinner length //TODO remove magic numbers
 
 export const esc_cursorToStorage = () => esc_cursorTo(...cursorStorage);
+
+const stackRow = 1;
+
+const BorderMarginSize = 2;
+export const gui_StackRow = BorderMarginSize + BOARDHEIGHT + stackRow;
 
 // Move the cursor up N lines: \033[<N>A
 // Move the cursor down N lines: \033[<N>B

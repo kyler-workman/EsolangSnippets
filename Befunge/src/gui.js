@@ -37,7 +37,7 @@ export function redrawDisplay(board){
 
     for(let i = 0; i < BOARDHEIGHT; i++){
         out.write(esc_cursorTo(1, i + BorderSize + 1) + `\u2551${' '.repeat(SideGapSize)}`); //left border
-        out.write(board[i].join('')); //content
+        out.write(board[i].join('')); //content //TODO find a way to render unprintable/control characters (see samples\dna)
         out.write(`${' '.repeat(SideGapSize)}\u2551`); //right border
     }
 

@@ -12,7 +12,7 @@ import * as fs from 'fs';
 //#region interpreter init
 var x = 0,
     y = 0;
-var ipDirection = Direction.Right;
+var instructionPointerDirection = Direction.Right;
 let terminateInterpreter = false;
 var stringMode = false;
 var board = process.argv[2]
@@ -70,27 +70,20 @@ function greaterThan(){
     var a = popStack(), b = popStack();
     pushInt(b > a ? 1 : 0);
 }
-const goUp = () => ipDirection = Direction.Up;
-const goDown = () => ipDirection = Direction.Down;
-const goLeft = () => ipDirection = Direction.Left;
-const goRight = () => ipDirection = Direction.Right;
-const goRandom = () => [goUp, goDown, goLeft, goRight][Math.floor(Math.random()*4)]();
-// function goRandom(){
-//     var r = Math.random();
-//     if      (r < .25) up();
-//     else if (r < .5) down();
-//     else if (r < .75) left();
-//     else right();
-// }
+
+const changeDirection = (d) => instructionPointerDirection = d;
+
+const changeDirectionRandom = () => instructionPointerDirection = [Direction.Up, Direction.Down, Direction.Left, Direction.Right][Math.floor(Math.random() * 4)];
+
 function horizontalIf(){
     var e = popStack();
-    if(e==0) goRight();
-    else goLeft();
+    if(e==0) changeDirection(Direction.Right);
+    else changeDirection(Direction.Left);
 }
 function verticalIf(){
     var e = popStack();
-    if(e==0) goDown();
-    else goUp();
+    if(e==0) changeDirection(Direction.Down);
+    else changeDirection(Direction.Up);
 }
 function toggleStringmode(){ stringMode =! stringMode }
 function duplicate(){
@@ -117,7 +110,7 @@ function writeChar(){
 }
 function move(){ //bridge calls this
     unhighlightCurrentCell(board, x, y);
-    switch(ipDirection){
+    switch(instructionPointerDirection){
         case Direction.Up:
             y = (y + (BOARDHEIGHT - 1)) % BOARDHEIGHT;
             break;
@@ -249,19 +242,19 @@ function step(){
                 greaterThan();
                 break;
             case '>':
-                goRight();
+                changeDirection(Direction.Right);
                 break;
             case '<':
-                goLeft();
+                changeDirection(Direction.Left);
                 break;
             case '^':
-                goUp();
+                changeDirection(Direction.Up);
                 break;
             case 'v':
-                goDown();
+                changeDirection(Direction.Down);
                 break;
             case '?':
-                goRandom();
+                changeDirectionRandom();
                 break;
             case '_':
                 horizontalIf();

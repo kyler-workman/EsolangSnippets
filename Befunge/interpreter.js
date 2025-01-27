@@ -317,7 +317,7 @@ function step(){
     }
 
     if(direction == 'x'){
-        writeToStatus('done');
+        writeToStatus('done'); //TODO not working anymore for some reason
         process.exit(); //Could disable interpreter interval as well if we want to do cleanup.
     }
     else{

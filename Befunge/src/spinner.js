@@ -5,6 +5,8 @@ const spinner = ['>    ','=>   ','==>  ','===> ','====>',' ===>','  ==>','   =>'
     '    <','   <=','  <==',' <===','<====','<=== ','<==  ','<=   ','<    ','-    ']
 let spinnerState = 0;
 
+export const gui_SpinnerWidth = spinner.reduce((t, n)=> t.length > n.length ? t.length : n.length, 0);
+
 export function tickSpinner(){ //uses the status row for a spinner, just for fun (-\|/)
     //redraw entire status line
     spinnerState = (spinnerState + 1) % spinner.length;
